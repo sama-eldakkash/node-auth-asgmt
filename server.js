@@ -23,6 +23,8 @@ function authenticate(req, res, next) {
 
   try {
     // TODO: Verify JWT
+    const decoded = verifyJWT(token, JWT_SECRET);
+    req.user = decoded;
 
     next();
   } catch {
@@ -49,6 +51,7 @@ app.post('/register', async (req, res) => {
     return res.status(409).json({ message: 'User already exists' });
 
   // TODO: Hash password
+  const hashedPassword = await hashPassword(password);
 
   users.push({ username, password: hashedPassword, role });
 
@@ -60,8 +63,19 @@ app.post('/login', async (req, res) => {
   const user = users.find((u) => u.username === username);
 
   // TODO: Verify password
+   // TODO: Sign JWT
+   
+  if (!user)
+    return res.status(401).json({ message: 'Invalid username or password' });
 
-  // TODO: Sign JWT
+  const isValid = await verifyPassword(password, user.password); 
+
+  if (!isValid)
+    return res.status(401).json({ message: 'Invalid username or password' });
+
+  const token = signJWT({ username: user.username, role: user.role }, JWT_SECRET); 
+
+ 
 
   res.json({ token });
 });
